@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Frutas do Abismo</title>
+
+<style>
+/* =======================
+   DESIGN — 65%
+======================= */
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: radial-gradient(circle at top, #1b0033, #000);
+  color: #fff;
+  text-align: center;
+}
+
+header {
+  padding: 20px;
+  font-size: 28px;
+  background: linear-gradient(90deg, #4b0082, #800080);
+}
+
+#game {
+  max-width: 420px;
+  margin: 20px auto;
+  background: rgba(0,0,0,0.7);
+  border-radius: 15px;
+  padding: 20px;
+  box-shadow: 0 0 25px purple;
+}
+
+.panel {
+  margin-bottom: 15px;
+  padding: 10px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.05);
+}
+
+button {
+  width: 100%;
+  padding: 12px;
+  margin-top: 10px;
+  border-radius: 10px;
+  border: none;
+  font-size: 16px;
+  background: linear-gradient(90deg, #8000ff, #c000ff);
+  color: white;
+  cursor: pointer;
+}
+
+button:hover {
+  filter: brightness(1.2);
+}
+
+.bar {
+  height: 12px;
+  background: #333;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.bar span {
+  display: block;
+  height: 100%;
+  background: lime;
+}
+
+.enemy-bar span {
+  background: red;
+}
+
+footer {
+  margin-top: 20px;
+  font-size: 12px;
+  opacity: 0.6;
+}
+</style>
+</head>
+
+<body>
+
+<header>🌊 Frutas do Abismo</header>
+
+<div id="game">
+
+  <div class="panel" id="islandName"></div>
+
+  <div class="panel">
+    <strong>Jogador</strong><br>
+    HP:
+    <div class="bar"><span id="playerHp"></span></div>
+    Energia:
+    <div class="bar"><span id="playerEnergy"></span></div>
+    <div id="playerStats"></div>
+  </div>
+
+  <div class="panel">
+    <strong>Inimigo</strong><br>
+    HP:
+    <div class="bar enemy-bar"><span id="enemyHp"></span></div>
+    <div id="enemyStats"></div>
+  </div>
+
+  <button onclick="attack()">⚔️ Atacar</button>
+  <button onclick="useFruit()">🍏 Usar Fruta</button>
+  <button onclick="changeIsland()">🗺️ Trocar Ilha</button>
+
+</div>
+
+<footer>Jogo web original — inspirado, não cópia</footer>
+
+<script>
+/* =======================
+   JOGABILIDADE — 35%
+======================= */
+
+// ===== PLAYER =====
+const player = {
+  level: 1,
+  xp: 0,
+  hp: 100,
+  maxHp: 100,
+  energy: 100,
+  maxEnergy: 100,
+  strength: 10,
+  fruit: "vento",
+  island: 0
+}
+
+// ===== ILHAS =====
+const islands = [
+  {
+    name: "🏝️ Porto Esquecido",
+    enemies: ["Pirata", "Bandido"],
+    bg: "purple"
+  },
+  {
+    name: "🌋 Fenda Vulcânica",
+    enemies: ["Minerador", "Criatura de Lava"],
+    bg: "orange"
+  },
+  {
+    name: "🌑 Trono do Abismo",
+    enemies: ["Guardião", "Sombra Viva"],
+    bg: "black"
+  }
+]
+
+// ===== INIMIGOS =====
+const enemyTypes = {
+  "Pirata": { hp: 40, dmg: 5 },
+  "Bandido": { hp: 50, dmg: 6 },
+  "Minerador": { hp: 90, dmg: 10 },
+  "Criatura de Lava": { hp: 120, dmg: 14 },
+  "Guardião": { hp: 200, dmg: 20 },
+  "Sombra Viva": { hp: 260, dmg: 25 }
+}
+
+let enemy = null
+
+// ===== SPAWN =====
+function spawnEnemy() {
+  const island = islands[player.island]
+  const type = island.enemies[Math.floor(Math.random() * island.enemies.length)]
+  enemy = {
+    name: type,
+    hp: enemyTypes[type].hp,
+    maxHp: enemyTypes[type].hp,
+    dmg: enemyTypes[type].dmg
+  }
+  updateUI()
+}
+
+// ===== ATAQUE =====
+function attack() {
+  if (!enemy) return
+
+  enemy.hp -= player.strength
+  player.hp -= enemy.dmg
+
+  if (enemy.hp <= 0) {
+    player.xp += 10
+    levelUpCheck()
+    spawnEnemy()
+  }
+
+  if (player.hp <= 0) {
+    player.hp = player.maxHp
+    player.energy = player.maxEnergy
+  }
+
+  updateUI()
+}
+
+// ===== FRUTA =====
+function useFruit() {
+  if (player.energy < 20) return
+
+  player.energy -= 20
+
+  if (player.fruit === "vento") {
+    enemy.hp -= 25
+  }
+
+  if (enemy.hp <= 0) {
+    player.xp += 10
+    spawnEnemy()
+  }
+
+  updateUI()
+}
+
+// ===== LEVEL =====
+function levelUpCheck() {
+  if (player.xp >= 50) {
+    player.xp = 0
+    player.level++
+    player.maxHp += 20
+    player.hp = player.maxHp
+    player.strength += 3
+  }
+}
+
+// ===== ILHA =====
+function changeIsland() {
+  player.island++
+  if (player.island >= islands.length) player.island = 0
+  spawnEnemy()
+}
+
+// ===== UI =====
+function updateUI() {
+  document.getElementById("islandName").innerText =
+    islands[player.island].name
+
+  document.getElementById("playerHp").style.width =
+    (player.hp / player.maxHp * 100) + "%"
+
+  document.getElementById("playerEnergy").style.width =
+    (player.energy / player.maxEnergy * 100) + "%"
+
+  document.getElementById("enemyHp").style.width =
+    (enemy.hp / enemy.maxHp * 100) + "%"
+
+  document.getElementById("playerStats").innerText =
+    `Lv ${player.level} | XP ${player.xp} | Força ${player.strength}`
+
+  document.getElementById("enemyStats").innerText =
+    `${enemy.name} | Dano ${enemy.dmg}`
+}
+
+// ===== START =====
+spawnEnemy()
+</script>
+
+</body>
+</html>
